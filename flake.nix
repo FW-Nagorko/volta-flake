@@ -1,9 +1,10 @@
 {
-  description = "Personal Volta dev shells (agent + server)";
+  description = "Personal Volta dev shells (agent + server + dashboard)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    vp-nix.url = "github:naitokosuke/vp-nix";
   };
 
   outputs =
@@ -11,28 +12,36 @@
       self,
       nixpkgs,
       flake-utils,
+      vp-nix,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = import nixpkgs { inherit system; };
-        cppLibs = [
-          pkgs.grpc
-          pkgs.protobuf
-          pkgs.fmt
-          pkgs.tomlplusplus
+        vp = vp-nix.packages.${system}.default;
+        cppLibs = with pkgs; [
+          grpc
+          protobuf
+          fmt
+          tomlplusplus
         ];
-        cmakeLibs = cppLibs ++ [
-          pkgs.openssl
-          pkgs.zlib
-          pkgs.c-ares
-          pkgs.re2
-          pkgs.abseil-cpp
-        ];
+        cmakeLibs =
+          with pkgs;
+          cppLibs
+          ++ [
+            openssl
+            zlib
+            c-ares
+            re2
+            abseil-cpp
+          ];
         wslHook = ''
           if [ -d /usr/lib/wsl/lib ]; then
             export LD_LIBRARY_PATH="/usr/lib/wsl/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           fi
+        '';
+        vpHook = ''
+          export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
         '';
       in
       {
@@ -69,8 +78,15 @@
             shellHook = wslHook;
           };
 
-          default = self.devShells.${system}.agent;
+          dashboard = pkgs.mkShell {
+            name = "volta-dashboard";
+            packages = with pkgs; [
+              vp
+            ];
+            shellHook = wslHook + vpHook;
+          };
 
+          default = self.devShells.${system}.agent;
         };
       }
     );
