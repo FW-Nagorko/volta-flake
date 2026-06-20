@@ -1,6 +1,9 @@
-{ pkgs, vp-nix }:
+{
+  pkgs,
+  perSystem,
+}:
 let
-  vp = vp-nix.packages.${pkgs.system}.default;
+  vp = perSystem.vp-nix.default;
 in
 pkgs.mkShell {
   packages = [ vp ];
