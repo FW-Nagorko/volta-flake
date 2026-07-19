@@ -5,6 +5,7 @@ let
     protobuf
     fmt
     tomlplusplus
+    gtest
   ];
   cmakeLibs =
     with pkgs;
