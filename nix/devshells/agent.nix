@@ -16,6 +16,7 @@ let
       c-ares
       re2
       abseil-cpp
+      spdlog
     ];
 in
 pkgs.mkShell {
